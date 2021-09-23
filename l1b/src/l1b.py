@@ -47,14 +47,14 @@ class l1b(initL1b):
             # Write output TOA
             # -------------------------------------------------------------------------------
             writeToa(self.outdir, self.globalConfig.l1b_toa + band, toa)
-            self.plotL1bToa(toa, self.outdir, band)
+            #self.plotL1bToa(toa, self.outdir, band)
 
             self.logger.info("End of BAND " + band)
 
         self.logger.info("End of the L1B Module!")
 
 
-    def equalization(self, toa, eq_add, eq_mult):
+    def equalization(self, toa_out, eq_add, eq_mult):
         """
         Equlization. Apply an offset and a gain.
         :param toa: TOA in DN
@@ -77,5 +77,5 @@ class l1b(initL1b):
 
         return toa
 
-    def plotL1bToa(self, toa_l1b, outputdir, band):
+    #def plotL1bToa(self, toa_l1b, outputdir, band):
         #TODO
