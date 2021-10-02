@@ -11,6 +11,7 @@ from common.plot.plotMat2D import plotMat2D
 from common.plot.plotF import plotF
 from scipy.signal import convolve2d
 from common.src.auxFunc import getIndexBand
+import os
 
 class opticalPhase(initIsm):
 
@@ -44,7 +45,8 @@ class opticalPhase(initIsm):
         toa = self.rad2Irrad(toa,
                              self.ismConfig.D,
                              self.ismConfig.f,
-                             self.ismConfig.Tr)
+                             self.ismConfig.Tr,
+                             sgm_wv)
 
         self.logger.debug("TOA [0,0] " +str(toa[0,0]) + " [e-]")
 
@@ -92,7 +94,8 @@ class opticalPhase(initIsm):
         :param Tr: Optical transmittance [-]
         :return: TOA image in irradiances [mW/m2]
         """
-        # TODO
+        toa=toa*Tr*(pi/4)*(D/f)**2
+
         return toa
 
 
@@ -114,7 +117,18 @@ class opticalPhase(initIsm):
         :param band: band
         :return: TOA image 2D in radiances [mW/m2]
         """
-        # TODO
-        return toa
+        isrf, wv_isrf = readIsrf(os.path.join(self.auxdir,self.ismConfig.isrffile), band)
+
+        isrf_n=isrf/(np.trapz(isrf,wv_isrf))
+        a=sum(isrf_n)
+        print(a)
+
+        toa_int=[]
+        for i in range(0,len(toa)):
+            for j in range(0,len(toa[0])):
+                toa_int[i,j]=np.interp(sgm_wv,toa[i,j,:],wv_isrf)
+
+        L=np.trapz(toa_int*isrf_n,wv_isrf)
+        return sgm_toa[:,:,0]
 
 
