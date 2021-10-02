@@ -36,25 +36,57 @@ class l1b(initL1b):
                 eq_add = readFactor(os.path.join(self.auxdir,self.l1bConfig.eq_add+band+NC_EXT),EQ_ADD)
 
                 # Do the equalization and save to file
-                toa = self.equalization(toa, eq_add, eq_mult)
+                toa_eq = self.equalization(toa, eq_add, eq_mult)
                 writeToa(self.outdir, self.globalConfig.l1b_toa_eq + band, toa)
 
             # Restitution (absolute radiometric gain)
             # -------------------------------------------------------------------------------
             self.logger.info("EODP-ALG-L1B-1020: Absolute radiometric gain application (restoration)")
-            toa = self.restoration(toa, self.l1bConfig.gain[getIndexBand(band)])
+            toa_l1b = self.restoration(toa_eq, self.l1bConfig.gain[getIndexBand(band)])
 
             # Write output TOA
             # -------------------------------------------------------------------------------
-            writeToa(self.outdir, self.globalConfig.l1b_toa + band, toa)
-            #self.plotL1bToa(toa, self.outdir, band)
+            writeToa(self.outdir, self.globalConfig.l1b_toa + band, toa_l1b)
+            self.plotL1bToa(toa_l1b, self.outdir, band,label="toa_l1b")
+            plt.legend()
+            plt.savefig(self.outdir + "toa-l1b-"+band+'.png')
+
+            #Cheking that difference is under the margin
+            #---------------------------------------------------------------------------------
+            toa_lucia=readToa('/home/luss/my_shared_folder/EODP_TER_2021/EODP-TS-L1B/output/',self.globalConfig.l1b_toa + band + '.nc')
+            self.plotL1bToa(toa_lucia, self.outdir, band,label="toa_lucia")
+            plt.legend()
+            plt.savefig(self.outdir + "toa-comparison-"+band+'.png')
+            plt.close()
+
+            #self.toadiff(toa_l1b,toa_lucia)
+
+            #Plotting against the isrf signal
+            #--------------------------------------------------------------------------------
+            self.plotL1bToa(toa_l1b, self.outdir, band,label="toa_l1b",index=50)
+            toa_isrf=readToa('/home/luss/my_shared_folder/EODP_TER_2021/EODP-TS-ISM/output/', 'ism_toa_isrf_' + band + '.nc')
+            self.plotL1bToa(toa_isrf, self.outdir, band,label="toa_isrf",index=50)
+            plt.legend()
+            plt.savefig(self.outdir + "toa-comparison-isrf-"+band+'.png')
+            plt.close()
+
+            #Equalization check
+            #--------------------------------------------------------------------------------
+            toa_eq_false= self.restoration(toa, self.l1bConfig.gain[getIndexBand(band)])
+            self.plotL1bToa(toa_l1b, self.outdir, band,label="toa_l1b")
+            self.plotL1bToa(toa_eq_false, self.outdir, band,label="toa_eq_false")
+            plt.legend()
+            plt.savefig(self.outdir + "toa-eq-false-"+band+'.png')
+            plt.close()
+
 
             self.logger.info("End of BAND " + band)
 
         self.logger.info("End of the L1B Module!")
 
 
-    def equalization(self, toa_out, eq_add, eq_mult):
+
+    def equalization(self, toa, eq_add, eq_mult):
         """
         Equlization. Apply an offset and a gain.
         :param toa: TOA in DN
@@ -62,7 +94,9 @@ class l1b(initL1b):
         :param eq_mult: Gain factor, adimensional
         :return: TOA in DN, equalized
         """
-        #TODO
+
+        toa_out=(toa-eq_add)/eq_mult
+
         return toa_out
 
     def restoration(self,toa,gain):
@@ -72,10 +106,31 @@ class l1b(initL1b):
         :param gain: gain in [rad/DN]
         :return: TOA in radiances [mW/sr/m2]
         """
-        #TODO
+
+        toa_out=toa*gain
+
         self.logger.debug('Sanity check. TOA in radiances after gain application ' + str(toa[1,-1]) + ' [mW/m2/sr]')
 
-        return toa
+        return toa_out
 
-    #def plotL1bToa(self, toa_l1b, outputdir, band):
-        #TODO
+    def plotL1bToa(self, toa, outputdir, band,label,index=0):
+
+        act_pixels=range(0,len(toa[0]))
+        plt.plot(act_pixels,toa[index,:],label=label)
+
+
+    def toadiff(self,toa_out,toa_in):
+        toa_diff=np.zeros(100,100)
+        count=0
+        for i in range(0,len(toa_out)):
+            for j in range(0,len(toa_out[0])):
+                toa_diff[i,j]=toa_out[i,j]-toa_in[i,j]
+                a=toa_out[i,j]*0.01
+
+                if toa_diff[i,j]>a:
+                    count=count+1
+
+        if count>0:
+            print('Difference check failed for '+band)
+        #else:
+            #print('Difference check successful for '+band)
