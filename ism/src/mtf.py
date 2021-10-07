@@ -133,11 +133,11 @@ class mtf:
         :param fr2D: 2D relative frequencies (f/fc), where fc is the optics cut-off frequency
         :return: diffraction MTF
         """
-        Hdiff=np.empty([len(fr2D),len(fr2D[0])])
-        for i in range(0,len(fr2D)):
-            for j in range(0,len(fr2D[0])):
-                Hdiff[i,j]=(2/pi)*(m.acos(fr2D[i,j])-fr2D[i,j]*(1-fr2D[i,j]**2)**(1/2))
-
+        #Hdiff=np.zeros([len(fr2D),len(fr2D[0])])
+        # for i in range(0,len(fr2D)):
+        #     for j in range(0,len(fr2D[0])):
+                #Hdiff[i,j]=(2/pi)*(np.arccos(fr2D[i,j])-fr2D[i,j]*(1-fr2D[i,j]**2)**(1/2))
+        Hdiff=(2/pi)*(np.arccos(fr2D)-fr2D*(1-fr2D**2)**(1/2))
         return Hdiff
 
 
@@ -252,13 +252,6 @@ class mtf:
         #Across track plot
         plt.figure(figsize=(8, 6))
         b=int(nlines/2)
-        ncfile = os.path.join('/home/luss/my_shared_folder/EODP_TER_2021/EODP-TS-ISM/output/', 'Hmotion_' + band + '.nc')
-        dset = Dataset(ncfile)
-        h_lucia= np.array(dset.variables['isrf'][:])
-
-        dset.close()
-        #h_lucia=readToa('/home/luss/my_shared_folder/EODP_TER_2021/EODP-TS-ISM/output/','Hdiff_' + band + '.nc')
-
 
         plt.plot(fnAct[a:],Hdiff[b,a:],label='Hdiff')
         plt.plot(fnAct[a:],Hdefoc[b,a:],label='Hdefoc')
@@ -267,7 +260,6 @@ class mtf:
         plt.plot(fnAct[a:],Hsmear[b,a:],label='Hsmear')
         plt.plot(fnAct[a:],Hmotion[b,a:],label='Hmotion')
         plt.plot(fnAct[a:],Hsys[b,a:],label='Hsys')
-        plt.plot(fnAct[a:],h_lucia[b,a:],label='hlucia')
         plt.grid()
 
         plt.ylim([0,1.1])
