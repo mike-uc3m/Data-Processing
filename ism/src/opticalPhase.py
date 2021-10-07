@@ -45,8 +45,7 @@ class opticalPhase(initIsm):
         toa = self.rad2Irrad(toa,
                              self.ismConfig.D,
                              self.ismConfig.f,
-                             self.ismConfig.Tr,
-                             sgm_wv)
+                             self.ismConfig.Tr)
 
         self.logger.debug("TOA [0,0] " +str(toa[0,0]) + " [e-]")
 
@@ -106,7 +105,13 @@ class opticalPhase(initIsm):
         :param Hsys: System MTF
         :return: TOA image in irradiances [mW/m2]
         """
-        # TODO
+        F=fft2(toa)
+        F=fftshift(F)
+        Hsys=fftshift(Hsys)
+        G=F*Hsys
+        G=fftshift(G)
+        toa_ft=ifft2(G)
+
         return toa_ft
 
     def spectralIntegration(self, sgm_toa, sgm_wv, band):
@@ -118,17 +123,17 @@ class opticalPhase(initIsm):
         :return: TOA image 2D in radiances [mW/m2]
         """
         isrf, wv_isrf = readIsrf(os.path.join(self.auxdir,self.ismConfig.isrffile), band)
+        isrf=isrf*1000
 
         isrf_n=isrf/(np.trapz(isrf,wv_isrf))
-        a=sum(isrf_n)
-        print(a)
 
-        toa_int=[]
-        for i in range(0,len(toa)):
-            for j in range(0,len(toa[0])):
-                toa_int[i,j]=np.interp(sgm_wv,toa[i,j,:],wv_isrf)
+        sgm_toa=np.array(sgm_toa)
+        toa=np.empty([sgm_toa.shape[0],sgm_toa.shape[1],len(wv_isrf)])
+        for i in range(0,len(sgm_toa)):
+            for j in range(0,len(sgm_toa[0])):
+                toa[i,j,:]=np.interp(wv_isrf,sgm_wv,sgm_toa[i,j,:])
 
-        L=np.trapz(toa_int*isrf_n,wv_isrf)
-        return sgm_toa[:,:,0]
+        L=np.trapz(toa*isrf_n,wv_isrf)
+        return L
 
 
