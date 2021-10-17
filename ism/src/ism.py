@@ -30,15 +30,15 @@ class ism(initIsm):
             myOpt = opticalPhase(self.auxdir, self.indir, self.outdir)
             toa = myOpt.compute(sgm_toa, sgm_wv, band)
 
-            # Detection Stage
-            # -------------------------------------------------------------------------------
-            #myDet = detectionPhase(self.auxdir, self.indir, self.outdir)
-            #toa = myDet.compute(toa, band)
+            # # Detection Stage
+            # # -------------------------------------------------------------------------------
+            myDet = detectionPhase(self.auxdir, self.indir, self.outdir)
+            toa = myDet.compute(toa, band)
 
             # Video Chain Phase
             # -------------------------------------------------------------------------------
-            #myVcu = videoChainPhase(self.auxdir, self.indir, self.outdir)
-            #toa = myVcu.compute(toa, band)
+            myVcu = videoChainPhase(self.auxdir, self.indir, self.outdir)
+            toa = myVcu.compute(toa, band)
 
             # Write output TOA
             # -------------------------------------------------------------------------------

@@ -4,7 +4,7 @@ from math import pi
 from ism.src.mtf import mtf
 from numpy.fft import fftshift, ifft2, fft2
 import numpy as np
-from common.io.writeToa import writeToa
+from common.io.writeToa import writeToa, readToa
 from common.io.readIsrf import readIsrf
 from scipy.interpolate import interp1d, interp2d
 from common.plot.plotMat2D import plotMat2D
@@ -12,6 +12,7 @@ from common.plot.plotF import plotF
 from scipy.signal import convolve2d
 from common.src.auxFunc import getIndexBand
 import os
+import matplotlib.pyplot as plt
 
 class opticalPhase(initIsm):
 
@@ -32,6 +33,7 @@ class opticalPhase(initIsm):
         # -------------------------------------------------------------------------------
         self.logger.info("EODP-ALG-ISM-1010: Spectral modelling. ISRF")
         toa = self.spectralIntegration(sgm_toa, sgm_wv, band)
+        toa_isrf=toa
 
         self.logger.debug("TOA [0,0] " +str(toa[0,0]) + " [e-]")
 
@@ -64,6 +66,24 @@ class opticalPhase(initIsm):
         toa = self.applySysMtf(toa, Hsys) # always calculated
         self.logger.debug("TOA [0,0] " +str(toa[0,0]) + " [e-]")
 
+        #Cheking that difference is under the margin
+        #---------------------------------------------------------------------------------
+        toa_lucia_isrf=readToa('/home/luss/my_shared_folder/EODP_TER_2021/EODP-TS-ISM/output/','ism_toa_isrf_' + band + '.nc')
+        toa_lucia_opt=readToa('/home/luss/my_shared_folder/EODP_TER_2021/EODP-TS-ISM/output/','ism_toa_optical_' + band + '.nc')
+        self.plotToa(toa_lucia_isrf, label="toa_isrf")
+        self.plotToa(toa_isrf, label="toa")
+        plt.legend()
+        plt.savefig(self.outdir + "toa-comparison-isrf-"+band+'.png')
+        plt.close()
+
+        self.plotToa(toa_lucia_opt, label="toa_opt")
+        self.plotToa(toa, label="toa")
+        plt.legend()
+        plt.savefig('/home/luss/my_shared_folder/test_ism/' + "toa-comparison-opt-"+band+'.png')
+        plt.close()
+
+        self.toadiff(toa,toa_lucia_isrf,1,band)
+        self.toadiff(toa,toa_lucia_opt,2,band)
 
 
         # Write output TOA & plots
@@ -107,10 +127,9 @@ class opticalPhase(initIsm):
         """
         F=fft2(toa)
         F=fftshift(F)
-        Hsys=fftshift(Hsys)
         G=F*Hsys
-        G=fftshift(G)
         toa_ft=ifft2(G)
+        toa_ft=np.real(toa_ft)
 
         return toa_ft
 
@@ -130,8 +149,29 @@ class opticalPhase(initIsm):
         L=np.zeros([sgm_toa.shape[0],sgm_toa.shape[1]])
         for i in range(sgm_toa.shape[0]):
             for j in range(sgm_toa.shape[1]):
-                toa_i=np.interp(wv_isrf,sgm_wv,sgm_toa[i,j,:])
+                cs=interp1d(sgm_wv,sgm_toa[i,j,:],fill_value=(0,0),bounds_error=False)
+                toa_i=cs(wv_isrf)
                 L[i,j]=np.sum(isrf_n*toa_i)
         return L
 
+    def plotToa(self, toa,label,index=0):
 
+        act_pixels=range(0,len(toa[0]))
+        fig=plt.plot(act_pixels,toa[index,:],label=label)
+        return fig
+
+    def toadiff(self,toa_out,toa_in,index,band):
+        toa_diff=np.zeros([toa_out.shape[0],toa_out.shape[1]])
+        count=0
+        for i in range(0,len(toa_out)):
+            for j in range(0,len(toa_out[0])):
+                toa_diff[i,j]=toa_out[i,j]-toa_in[i,j]
+                a=toa_out[i,j]*0.01
+
+                if toa_diff[i,j]>a:
+                    count=count+1
+
+        if index==1 and count>0:
+            print('ISRF difference check failed for '+band)
+        elif index==2 and count>0:
+            print('Optical difference check failed for '+band)

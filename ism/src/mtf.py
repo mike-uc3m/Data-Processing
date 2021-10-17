@@ -122,8 +122,8 @@ class mtf:
 
         [fnAltxx,fnActxx] = np.meshgrid(fnAlt,fnAct,indexing='ij') # Please use ‘ij’ indexing or you will get the transpose
         fn2D=np.sqrt(fnAltxx*fnAltxx + fnActxx*fnActxx)
-        [frAltxx,frActxx] = np.meshgrid(frAlt,frAct,indexing='ij')
-        fr2D=np.sqrt(frAltxx*frAltxx + frActxx*frActxx)*(1/w)/ep_cutoff
+
+        fr2D=fn2D*(1/w)/ep_cutoff
 
         return fn2D, fr2D, fnAct, fnAlt
 
@@ -133,11 +133,9 @@ class mtf:
         :param fr2D: 2D relative frequencies (f/fc), where fc is the optics cut-off frequency
         :return: diffraction MTF
         """
-        #Hdiff=np.zeros([len(fr2D),len(fr2D[0])])
-        # for i in range(0,len(fr2D)):
-        #     for j in range(0,len(fr2D[0])):
-                #Hdiff[i,j]=(2/pi)*(np.arccos(fr2D[i,j])-fr2D[i,j]*(1-fr2D[i,j]**2)**(1/2))
+
         Hdiff=(2/pi)*(np.arccos(fr2D)-fr2D*(1-fr2D**2)**(1/2))
+
         return Hdiff
 
 
@@ -233,17 +231,19 @@ class mtf:
         :return: N/A
         """
 
+        a=int(ncolumns/2)
+        b=int(nlines/2)
+
         #Along track plot
         plt.figure(figsize=(8, 6))
-        a=int(ncolumns/2)
 
-        plt.plot(fnAlt,Hdiff[:,a],label='Hdiff')
-        plt.plot(fnAlt,Hdefoc[:,a],label='Hdefoc')
-        plt.plot(fnAlt,Hwfe[:,a],label='Hwfe')
-        plt.plot(fnAlt,Hdet[:,a],label='Hdet')
-        plt.plot(fnAlt,Hsmear[:,a],label='Hsmear')
-        plt.plot(fnAlt,Hmotion[:,a],label='Hmotion')
-        plt.plot(fnAlt,Hsys[:,a],label='Hsys')
+        plt.plot(fnAlt[b:],Hdiff[b:,a],label='Hdiff')
+        plt.plot(fnAlt[b:],Hdefoc[b:,a],label='Hdefoc')
+        plt.plot(fnAlt[b:],Hwfe[b:,a],label='Hwfe')
+        plt.plot(fnAlt[b:],Hdet[b:,a],label='Hdet')
+        plt.plot(fnAlt[b:],Hsmear[b:,a],label='Hsmear')
+        plt.plot(fnAlt[b:],Hmotion[b:,a],label='Hmotion')
+        plt.plot(fnAlt[b:],Hsys[b:,a],label='Hsys')
 
         plt.legend()
         plt.savefig(directory+'MTF_ALT_'+band+'.png')
@@ -251,7 +251,6 @@ class mtf:
 
         #Across track plot
         plt.figure(figsize=(8, 6))
-        b=int(nlines/2)
 
         plt.plot(fnAct[a:],Hdiff[b,a:],label='Hdiff')
         plt.plot(fnAct[a:],Hdefoc[b,a:],label='Hdefoc')

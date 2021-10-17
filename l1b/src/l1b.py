@@ -39,6 +39,7 @@ class l1b(initL1b):
                 toa_eq = self.equalization(toa, eq_add, eq_mult)
                 writeToa(self.outdir, self.globalConfig.l1b_toa_eq + band, toa)
 
+
             # Restitution (absolute radiometric gain)
             # -------------------------------------------------------------------------------
             self.logger.info("EODP-ALG-L1B-1020: Absolute radiometric gain application (restoration)")
@@ -59,7 +60,7 @@ class l1b(initL1b):
             plt.savefig(self.outdir + "toa-comparison-"+band+'.png')
             plt.close()
 
-            #self.toadiff(toa_l1b,toa_lucia)
+            self.toadiff(toa_l1b,toa_lucia)
 
             #Plotting against the isrf signal
             #--------------------------------------------------------------------------------
@@ -120,7 +121,7 @@ class l1b(initL1b):
 
 
     def toadiff(self,toa_out,toa_in):
-        toa_diff=np.zeros(100,100)
+        toa_diff=np.zeros([toa_out.shape[0],toa_out.shape[1]])
         count=0
         for i in range(0,len(toa_out)):
             for j in range(0,len(toa_out[0])):
