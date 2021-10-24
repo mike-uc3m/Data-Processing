@@ -13,6 +13,7 @@ from scipy.signal import convolve2d
 from common.src.auxFunc import getIndexBand
 import os
 import matplotlib.pyplot as plt
+import sys
 
 class opticalPhase(initIsm):
 
@@ -70,19 +71,19 @@ class opticalPhase(initIsm):
         #---------------------------------------------------------------------------------
         toa_lucia_isrf=readToa('/home/luss/my_shared_folder/EODP_TER_2021/EODP-TS-ISM/output/','ism_toa_isrf_' + band + '.nc')
         toa_lucia_opt=readToa('/home/luss/my_shared_folder/EODP_TER_2021/EODP-TS-ISM/output/','ism_toa_optical_' + band + '.nc')
-        self.plotToa(toa_lucia_isrf, label="toa_isrf")
-        self.plotToa(toa_isrf, label="toa")
+        self.plotToa(toa_lucia_isrf, label="toa_isrf_reference")
+        self.plotToa(toa_isrf, label="toa_output_isrf")
         plt.legend()
         plt.savefig(self.outdir + "toa-comparison-isrf-"+band+'.png')
         plt.close()
 
-        self.plotToa(toa_lucia_opt, label="toa_opt")
-        self.plotToa(toa, label="toa")
+        self.plotToa(toa_lucia_opt, label="toa_opt_reference")
+        self.plotToa(toa, label="toa_output")
         plt.legend()
         plt.savefig('/home/luss/my_shared_folder/test_ism/' + "toa-comparison-opt-"+band+'.png')
         plt.close()
 
-        self.toadiff(toa,toa_lucia_isrf,1,band)
+        self.toadiff(toa_isrf,toa_lucia_isrf,1,band)
         self.toadiff(toa,toa_lucia_opt,2,band)
 
 
@@ -113,8 +114,11 @@ class opticalPhase(initIsm):
         :param Tr: Optical transmittance [-]
         :return: TOA image in irradiances [mW/m2]
         """
-        toa=toa*Tr*(pi/4)*(D/f)**2
+        rad_factor=Tr*(pi/4)*(D/f)**2
+        toa=toa*Tr*rad_factor
 
+        with open(self.outdir+'Instrument module.txt', 'a') as f:
+            f.write('Radiance to irradiance conversion: ' + str(rad_factor)+'\n')
         return toa
 
 
@@ -126,7 +130,7 @@ class opticalPhase(initIsm):
         :return: TOA image in irradiances [mW/m2]
         """
         F=fft2(toa)
-        F=fftshift(F)
+        Hsys=fftshift(Hsys)
         G=F*Hsys
         toa_ft=ifft2(G)
         toa_ft=np.real(toa_ft)
@@ -170,8 +174,9 @@ class opticalPhase(initIsm):
 
                 if toa_diff[i,j]>a:
                     count=count+1
-
-        if index==1 and count>0:
-            print('ISRF difference check failed for '+band)
-        elif index==2 and count>0:
-            print('Optical difference check failed for '+band)
+        n_elem=toa_out.shape[0]*toa_out.shape[1]
+        if (count/n_elem)>0.003:
+            if index==1:
+                sys.exit('Difference check failed for '+band+' after ISRF in optical stage')
+            elif index==2:
+                sys.exit('Optical difference check failed for '+band+' after optical stage')

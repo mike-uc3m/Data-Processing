@@ -84,7 +84,7 @@ class mtf:
         Hsys = Hdiff*Hwfe*Hdefoc*Hdet*Hsmear*Hmotion
 
         # Plot cuts ACT/ALT of the MTF
-        self.plotMtf(Hdiff, Hdefoc, Hwfe, Hdet, Hsmear, Hmotion, Hsys, nlines, ncolumns, fnAct, fnAlt, directory, band)
+        self.plotMtf(Hdiff, Hdefoc, Hwfe, Hdet, Hsmear, Hmotion, Hsys, nlines, ncolumns, fnAct, fnAlt, directory, band,pix_size)
         # fig1.show()
         # fig1.savefig('/home/luss/my_shared_folder/test_ism/MTF_ALT.png')
         # fig2.savefig('/home/luss/my_shared_folder/test_ism/MTF_ACT.png')
@@ -212,7 +212,7 @@ class mtf:
 
         return Hmotion
 
-    def plotMtf(self,Hdiff, Hdefoc, Hwfe, Hdet, Hsmear, Hmotion, Hsys, nlines, ncolumns, fnAct, fnAlt, directory, band):
+    def plotMtf(self,Hdiff, Hdefoc, Hwfe, Hdet, Hsmear, Hmotion, Hsys, nlines, ncolumns, fnAct, fnAlt, directory, band,w):
         """
         Plotting the system MTF and all of its contributors
         :param Hdiff: Diffraction MTF
@@ -236,7 +236,9 @@ class mtf:
 
         #Along track plot
         plt.figure(figsize=(8, 6))
-
+        N_freq=1/(2*w)
+        Nf=np.arange(0,1,1/fnAlt.shape[0])
+        N_freq=np.zeros([fnAlt.shape[0],1])+N_freq
         plt.plot(fnAlt[b:],Hdiff[b:,a],label='Hdiff')
         plt.plot(fnAlt[b:],Hdefoc[b:,a],label='Hdefoc')
         plt.plot(fnAlt[b:],Hwfe[b:,a],label='Hwfe')
@@ -244,6 +246,7 @@ class mtf:
         plt.plot(fnAlt[b:],Hsmear[b:,a],label='Hsmear')
         plt.plot(fnAlt[b:],Hmotion[b:,a],label='Hmotion')
         plt.plot(fnAlt[b:],Hsys[b:,a],label='Hsys')
+        plt.plot(N_freq,Nf,label='Nyquist frequency')
 
         plt.legend()
         plt.savefig(directory+'MTF_ALT_'+band+'.png')

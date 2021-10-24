@@ -1,5 +1,6 @@
 
 # LEVEL-1C
+import sys
 
 from l1c.src.initL1c import initL1c
 from common.io.writeToa import writeToa, readToa
@@ -28,7 +29,7 @@ class l1c(initL1c):
             # -------------------------------------------------------------------------------
             toa = readToa(self.l1bdir, self.globalConfig.l1b_toa + band + '.nc')
             lat,lon = readGeodetic(self.gmdir, self.globalConfig.gm_geoloc)
-            self.checkSize(lat,toa)
+            self.checkSize(lat,toa,band)
 
             # L1C reprojection onto the MGRS grid
             # -------------------------------------------------------------------------------
@@ -62,10 +63,32 @@ class l1c(initL1c):
         :param band: band
         :return: L1C radiances, L1C latitude and longitude in degrees
         '''
-        #TODO
+        tck = bisplrep(lat,lon,toa)
+        m = mgrs.MGRS()
+        mgrs_tiles = set([])
+
+        lon=np.array(lon)
+        lat=np.array(lat)
+
+        for i in range(0,lon.shape[0]):
+            for j in range(0,lon.shape[1]):
+                mgrs_tiles.add(str(m.toMGRS(lat[i,j],lon[i,j],inDegrees=True,MGRSPrecision=self.l1cConfig.mgrs_tile_precision)))
+
+        mgrs_tiles=list(mgrs_tiles)
+
+        lat_l1c=[]
+        lon_l1c=[]
+        toa_l1c=[]
+
+        for k in range(len(mgrs_tiles)):
+            a,b=m.toLatLon(mgrs_tiles[k], inDegrees=True)
+            lat_l1c.append(a)
+            lon_l1c.append(b)
+            toa_l1c.append(bisplev(lat_l1c[k],lon_l1c[k],tck))
+
         return lat_l1c, lon_l1c, toa_l1c
 
-    def checkSize(self, lat,toa):
+    def checkSize(self, lat,toa,band):
         '''
         Check the sizes of the input radiances and geodetic coordinates.
         If they don't match, exit.
@@ -73,4 +96,5 @@ class l1c(initL1c):
         :param toa: Radiance 2D matrix
         :return: NA
         '''
-        #TODO
+        if lat.shape!=toa.shape:
+            sys.exit('Toa size does not match latitude and longitude size for '+band)

@@ -7,6 +7,7 @@ from ism.src.detectionPhase import detectionPhase
 from ism.src.videoChainPhase import videoChainPhase
 from common.io.readCube import readCube
 from common.io.writeToa import writeToa
+import numpy as np
 
 class ism(initIsm):
 
@@ -20,16 +21,18 @@ class ism(initIsm):
         # Read input TOA cube
         # -------------------------------------------------------------------------------
         sgm_toa, sgm_wv = readCube(self.indir, self.globalConfig.scene)
-
+        with open(self.outdir+'Instrument module.txt', 'w') as f:
+            f.write('***************************Instrument module outputs***************************\n')
         for band in self.globalConfig.bands:
-
             self.logger.info("Start of BAND " + band)
-
+            with open(self.outdir+'Instrument module.txt', 'a') as f:
+                f.write('----------------------------------------------\n')
+                f.write(band+'\n')
+                f.write('----------------------------------------------\n')
             # Optical Phase
             # -------------------------------------------------------------------------------
             myOpt = opticalPhase(self.auxdir, self.indir, self.outdir)
-            toa = myOpt.compute(sgm_toa, sgm_wv, band)
-
+            toa= myOpt.compute(sgm_toa, sgm_wv, band)
             # # Detection Stage
             # # -------------------------------------------------------------------------------
             myDet = detectionPhase(self.auxdir, self.indir, self.outdir)

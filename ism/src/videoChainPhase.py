@@ -36,6 +36,7 @@ class videoChainPhase(initIsm):
         # Plot
         if self.ismConfig.save_vcu_stage:
             saveas_str = self.globalConfig.ism_toa_vcu + band
+            writeToa(self.outdir, saveas_str, toa)
             title_str = 'TOA after the VCU phase [DN]'
             xlabel_str='ACT'
             ylabel_str='ALT'
@@ -64,6 +65,9 @@ class videoChainPhase(initIsm):
         :return: output toa in [V]
         """
         toa=toa*OCF*gain_adc
+
+        with open(self.outdir+'Instrument module.txt', 'a') as f:
+            f.write('Electron to volt conversion: ' + str(OCF*gain_adc)+'\n')
         return toa
 
     def digitisation(self, toa, bit_depth, min_voltage, max_voltage):
@@ -75,7 +79,19 @@ class videoChainPhase(initIsm):
         :param max_voltage: maximum voltage
         :return: toa in digital counts
         """
+
         toa=np.round(((2**bit_depth)-1)*toa/(max_voltage-min_voltage))
+
+        for i in range(toa.shape[0]):
+            for j in range (toa.shape[1]):
+                if toa[i,j]>((2**bit_depth)-1):
+                    toa[i,j]=(2**bit_depth)-1
+                elif toa[i,j]<0:
+                    toa[i,j]=0
+
+        conv_factor=((2**bit_depth)-1)/(max_voltage-min_voltage)
+        with open(self.outdir+'Instrument module.txt', 'a') as f:
+            f.write('Volt to digital number conversion: ' + str(conv_factor)+'\n')
         return toa
 
     def toadiff(self,toa_out,toa_in,band):
@@ -91,4 +107,4 @@ class videoChainPhase(initIsm):
 
         n_elem=toa_out.shape[0]*toa_out.shape[1]
         if (count/n_elem)>0.003:
-            sys.exit('Difference check failed for '+band+' after detection and video stages')
+            sys.exit('Difference check failed for '+band+' after video stage')

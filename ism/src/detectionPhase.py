@@ -1,7 +1,7 @@
 
 from ism.src.initIsm import initIsm
 import numpy as np
-from common.io.writeToa import writeToa
+from common.io.writeToa import writeToa, readToa
 from common.plot.plotMat2D import plotMat2D
 from common.plot.plotF import plotF
 import sys
@@ -93,6 +93,12 @@ class detectionPhase(initIsm):
             saveas_str = saveas_str + '_alt' + str(idalt)
             plotF([], toa[idalt,:], title_str, xlabel_str, ylabel_str, self.outdir, saveas_str)
 
+        #Cheking that difference is under the margin
+        #---------------------------------------------------------------------------------
+        toa_lucia=readToa('/home/luss/my_shared_folder/EODP_TER_2021/EODP-TS-ISM/output/',self.globalConfig.ism_toa_detection + band + '.nc')
+
+        self.toadiff(toa,toa_lucia,band)
+
         return toa
 
 
@@ -109,6 +115,10 @@ class detectionPhase(initIsm):
         Ein=toa*area_pix*tint
         Eph=self.constants.h_planck*self.constants.speed_light/wv
         toa_ph=Ein/Eph
+        conv_factor=area_pix*tint/Eph
+
+        with open(self.outdir+'Instrument module.txt', 'a') as f:
+            f.write('Irradiance to photon conversion: ' + str(conv_factor)+'\n')
         return toa_ph
 
     def phot2Electr(self, toa, QE):
@@ -119,10 +129,13 @@ class detectionPhase(initIsm):
         :return: toa in electrons
         """
         toae=toa*QE
-        # for i in range(toae.shape[0]):
-        #     for j in range(toae.shape[1]):
-        #         if toae[i,j]>self.ismConfig.FWC:
-        #            # sys.exit("Error computing the Number of Electrons")
+        for i in range(toae.shape[0]):
+            for j in range(toae.shape[1]):
+                if toae[i,j]>self.ismConfig.FWC:
+                   toae[i,j]=self.ismConfig.FWC
+
+        with open(self.outdir+'Instrument module.txt', 'a') as f:
+            f.write('Photon to electron conversion: ' + str(QE)+'\n')
         return toae
 
     def badDeadPixels(self, toa,bad_pix,dead_pix,bad_pix_red,dead_pix_red):
@@ -139,7 +152,7 @@ class detectionPhase(initIsm):
         ndead = int(dead_pix/100*toa.shape[1])
         if nbad!=0:
             step_bad = int(toa.shape[1]/nbad)
-            for i in np.arange(0,toa.shape[1],step_bad):
+            for i in np.arange(5,toa.shape[1],step_bad):
                toa[:,i]=toa[:,i]*(1-bad_pix_red)
         if ndead!=0:
             step_dead=int(toa.shape[1]/ndead)
@@ -176,6 +189,21 @@ class detectionPhase(initIsm):
         Sd=ds_A_coeff*((T/Tref)**3)*np.exp(-ds_B_coeff*(1/T-1/Tref))
         DS=Sd*(1+DSNU)
         for i in range(DS.shape[0]):
-            toa[:,i]=toa[:,i]*DS[i]
+            toa[:,i]=toa[:,i]+DS[i]
 
         return toa
+
+    def toadiff(self,toa_out,toa_in,band):
+        toa_diff=np.zeros([toa_out.shape[0],toa_out.shape[1]])
+        count=0
+        for i in range(0,len(toa_out)):
+            for j in range(0,len(toa_out[0])):
+                toa_diff[i,j]=toa_out[i,j]-toa_in[i,j]
+                a=toa_out[i,j]*0.01
+
+                if toa_diff[i,j]>a:
+                    count=count+1
+
+        n_elem=toa_out.shape[0]*toa_out.shape[1]
+        if (count/n_elem)>0.003:
+            sys.exit('Difference check failed for '+band+' after detection stage')
