@@ -8,6 +8,7 @@ from common.io.readFactor import readFactor, EQ_MULT, EQ_ADD, NC_EXT
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import sys
 
 class l1b(initL1b):
 
@@ -60,7 +61,7 @@ class l1b(initL1b):
             plt.savefig(self.outdir + "toa-comparison-"+band+'.png')
             plt.close()
 
-            self.toadiff(toa_l1b,toa_lucia)
+            self.toadiff(toa_l1b,toa_lucia,band)
 
             #Plotting against the isrf signal
             #--------------------------------------------------------------------------------
@@ -120,18 +121,16 @@ class l1b(initL1b):
         plt.plot(act_pixels,toa[index,:],label=label)
 
 
-    def toadiff(self,toa_out,toa_in):
+    def toadiff(self,toa_out,toa_in,band):
         toa_diff=np.zeros([toa_out.shape[0],toa_out.shape[1]])
         count=0
         for i in range(0,len(toa_out)):
             for j in range(0,len(toa_out[0])):
-                toa_diff[i,j]=toa_out[i,j]-toa_in[i,j]
-                a=toa_out[i,j]*0.01
+                toa_diff[i,j]=np.abs(toa_out[i,j]-toa_in[i,j])
+                a=np.abs(toa_out[i,j]*0.0001)
 
                 if toa_diff[i,j]>a:
                     count=count+1
-
-        if count>0:
-            print('Difference check failed for '+band)
-        #else:
-            #print('Difference check successful for '+band)
+        n_elem=toa_out.shape[0]*toa_out.shape[1]
+        if (count/n_elem)>0.00003:
+            sys.exit('L1B difference check failed for '+band)

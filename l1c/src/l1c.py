@@ -41,6 +41,26 @@ class l1c(initL1c):
 
             self.logger.info("End of BAND " + band)
 
+            #Cheking that difference is under the margin
+            #---------------------------------------------------------------------------------
+            toa_lucia=readToa('/home/luss/my_shared_folder/EODP_TER_2021/EODP-TS-L1C/output/',self.globalConfig.l1c_toa + band + '.nc')
+
+            self.toadiff(toa_l1c,toa_lucia,band)
+
+            lat = getCorners(lat)
+            lon = getCorners(lon)
+            fig = plt.figure(figsize=(20,10))
+            plt.plot(lon, lat, 'k', linewidth=2, label="L1B")
+            plt.plot(lon_l1c, lat_l1c, 'r.', markersize=5, label="L1C MGRS")
+            plt.title('Projection on ground', fontsize=20)
+            plt.xlabel('Longitude [deg]', fontsize=16)
+            plt.ylabel('Latitude [deg]', fontsize=16)
+            plt.grid()
+            plt.axis('equal')
+            plt.legend()
+            plt.savefig(self.outdir + 'footprint_' + band + '.png')
+            plt.close(fig)
+
         self.logger.info("End of the L1C Module!")
 
 
@@ -98,3 +118,20 @@ class l1c(initL1c):
         '''
         if lat.shape!=toa.shape:
             sys.exit('Toa size does not match latitude and longitude size for '+band)
+
+    def toadiff(self,toa_out,toa_in,band):
+        toa_diff=np.zeros(len(toa_out))
+        toa_out=np.sort(toa_out) #We use around so both signals have the same number of decimals (byy default toa_out is longer)
+        toa_in=np.sort(toa_in)
+        count=0
+        for i in range(0,len(toa_out)):
+            #for j in range(0,len(toa_out[0])):
+            toa_diff[i]=np.abs((toa_out[i]-toa_in[i]))
+            a=np.abs(toa_out[i]*0.0001)
+
+            if toa_diff[i]>a:
+                count=count+1
+
+        n_elem=len(toa_out)
+        if (count/n_elem)>0.00003:
+            sys.exit('Difference check failed for '+band+' after module L1C')

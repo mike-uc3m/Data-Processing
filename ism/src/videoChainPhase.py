@@ -81,17 +81,18 @@ class videoChainPhase(initIsm):
         """
 
         toa=np.round(((2**bit_depth)-1)*toa/(max_voltage-min_voltage))
-
+        count=0
         for i in range(toa.shape[0]):
             for j in range (toa.shape[1]):
                 if toa[i,j]>((2**bit_depth)-1):
                     toa[i,j]=(2**bit_depth)-1
+                    count+=1
                 elif toa[i,j]<0:
                     toa[i,j]=0
-
+        sat_pix=count/(toa.shape[0]*toa.shape[1])
         conv_factor=((2**bit_depth)-1)/(max_voltage-min_voltage)
         with open(self.outdir+'Instrument module.txt', 'a') as f:
-            f.write('Volt to digital number conversion: ' + str(conv_factor)+'\n')
+            f.write('Volt to digital number conversion: ' + str(conv_factor)+'\n'+'Saturated pixels: ' + str(sat_pix*100)+'%\n')
         return toa
 
     def toadiff(self,toa_out,toa_in,band):

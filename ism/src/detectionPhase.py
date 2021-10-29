@@ -198,12 +198,12 @@ class detectionPhase(initIsm):
         count=0
         for i in range(0,len(toa_out)):
             for j in range(0,len(toa_out[0])):
-                toa_diff[i,j]=toa_out[i,j]-toa_in[i,j]
-                a=toa_out[i,j]*0.01
+                toa_diff[i,j]=np.abs(toa_out[i,j]-toa_in[i,j])
+                a=np.abs(toa_out[i,j]*0.0001)
 
                 if toa_diff[i,j]>a:
                     count=count+1
 
         n_elem=toa_out.shape[0]*toa_out.shape[1]
-        if (count/n_elem)>0.003:
+        if (count/n_elem)>0.00003:
             sys.exit('Difference check failed for '+band+' after detection stage')

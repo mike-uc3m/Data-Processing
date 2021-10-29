@@ -20,7 +20,7 @@ class baseModule:
         indir = indir.split(',')
         for istr in range(len(indir)):
             if not (fileExists(indir[istr])):
-                raise Exception('Inputs folder not found ' + indir)
+                raise Exception('Inputs folder not found ')
             else:
                 indir[istr] = addFileSep(indir[istr])
         if len(indir)==1: # If there is only one directory, remove the list

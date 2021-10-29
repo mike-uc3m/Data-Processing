@@ -236,7 +236,7 @@ class mtf:
 
         #Along track plot
         plt.figure(figsize=(8, 6))
-        N_freq=1/(2*w)
+        N_freq=1/(2*w*nlines)
         Nf=np.arange(0,1,1/fnAlt.shape[0])
         N_freq=np.zeros([fnAlt.shape[0],1])+N_freq
         plt.plot(fnAlt[b:],Hdiff[b:,a],label='Hdiff')

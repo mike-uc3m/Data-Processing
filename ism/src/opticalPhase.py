@@ -74,12 +74,18 @@ class opticalPhase(initIsm):
         self.plotToa(toa_lucia_isrf, label="toa_isrf_reference")
         self.plotToa(toa_isrf, label="toa_output_isrf")
         plt.legend()
+        plt.ylabel('[W/m2]')
+        plt.xlabel('ACT pixels')
+        plt.title('TOA after the ISRF ('+band+')')
         plt.savefig(self.outdir + "toa-comparison-isrf-"+band+'.png')
         plt.close()
 
         self.plotToa(toa_lucia_opt, label="toa_opt_reference")
         self.plotToa(toa, label="toa_output")
         plt.legend()
+        plt.ylabel('[W/m2]')
+        plt.xlabel('ACT pixels')
+        plt.title('TOA after the optical stage('+band+')')
         plt.savefig('/home/luss/my_shared_folder/test_ism/' + "toa-comparison-opt-"+band+'.png')
         plt.close()
 
@@ -169,13 +175,13 @@ class opticalPhase(initIsm):
         count=0
         for i in range(0,len(toa_out)):
             for j in range(0,len(toa_out[0])):
-                toa_diff[i,j]=toa_out[i,j]-toa_in[i,j]
-                a=toa_out[i,j]*0.01
+                toa_diff[i,j]=np.abs(toa_out[i,j]-toa_in[i,j])
+                a=np.abs(toa_out[i,j]*0.0001)
 
                 if toa_diff[i,j]>a:
                     count=count+1
         n_elem=toa_out.shape[0]*toa_out.shape[1]
-        if (count/n_elem)>0.003:
+        if (count/n_elem)>0.00003:
             if index==1:
                 sys.exit('Difference check failed for '+band+' after ISRF in optical stage')
             elif index==2:
