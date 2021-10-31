@@ -121,7 +121,7 @@ class opticalPhase(initIsm):
         :return: TOA image in irradiances [mW/m2]
         """
         rad_factor=Tr*(pi/4)*(D/f)**2
-        toa=toa*Tr*rad_factor
+        toa=toa*rad_factor
 
         with open(self.outdir+'Instrument module.txt', 'a') as f:
             f.write('Radiance to irradiance conversion: ' + str(rad_factor)+'\n')

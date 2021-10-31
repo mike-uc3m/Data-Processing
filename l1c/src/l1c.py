@@ -121,7 +121,7 @@ class l1c(initL1c):
 
     def toadiff(self,toa_out,toa_in,band):
         toa_diff=np.zeros(len(toa_out))
-        toa_out=np.sort(toa_out) #We use around so both signals have the same number of decimals (byy default toa_out is longer)
+        toa_out=np.sort(toa_out)
         toa_in=np.sort(toa_in)
         count=0
         for i in range(0,len(toa_out)):

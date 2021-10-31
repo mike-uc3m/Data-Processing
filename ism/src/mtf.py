@@ -55,14 +55,14 @@ class mtf:
         self.logger.debug("Calculation of the diffraction MTF")
         Hdiff = self.mtfDiffract(fr2D)
 
-        c_hdiff=0
-        for i in range (0,len(Hdiff)):
-            for j in range (0,len(Hdiff)):
-                if fr2D[i,j]**2>1 and H[i,j]!=0:
-                    c_hdiff=c_hdiff+1
-
-        if c_hdiff!=0:
-            print('H_diff check failed')
+        # c_hdiff=0
+        # for i in range (0,len(Hdiff)):
+        #     for j in range (0,len(Hdiff)):
+        #         if fr2D[i,j]**2>1 and H[i,j]!=0:
+        #             c_hdiff=c_hdiff+1
+        #
+        # if c_hdiff!=0:
+        #     print('H_diff check failed')
 
         # Defocus
         Hdefoc = self.mtfDefocus(fr2D, defocus, focal, D)
@@ -84,10 +84,7 @@ class mtf:
         Hsys = Hdiff*Hwfe*Hdefoc*Hdet*Hsmear*Hmotion
 
         # Plot cuts ACT/ALT of the MTF
-        self.plotMtf(Hdiff, Hdefoc, Hwfe, Hdet, Hsmear, Hmotion, Hsys, nlines, ncolumns, fnAct, fnAlt, directory, band,pix_size)
-        # fig1.show()
-        # fig1.savefig('/home/luss/my_shared_folder/test_ism/MTF_ALT.png')
-        # fig2.savefig('/home/luss/my_shared_folder/test_ism/MTF_ACT.png')
+        self.plotMtf(Hdiff, Hdefoc, Hwfe, Hdet, Hsmear, Hmotion, Hsys, nlines, ncolumns, fnAct, fnAlt, directory, band)
 
 
         return Hsys
@@ -212,7 +209,7 @@ class mtf:
 
         return Hmotion
 
-    def plotMtf(self,Hdiff, Hdefoc, Hwfe, Hdet, Hsmear, Hmotion, Hsys, nlines, ncolumns, fnAct, fnAlt, directory, band,w):
+    def plotMtf(self,Hdiff, Hdefoc, Hwfe, Hdet, Hsmear, Hmotion, Hsys, nlines, ncolumns, fnAct, fnAlt, directory, band):
         """
         Plotting the system MTF and all of its contributors
         :param Hdiff: Diffraction MTF
@@ -236,7 +233,7 @@ class mtf:
 
         #Along track plot
         plt.figure(figsize=(8, 6))
-        N_freq=1/(2*w*nlines)
+        N_freq=fnAlt[nlines-1]
         Nf=np.arange(0,1,1/fnAlt.shape[0])
         N_freq=np.zeros([fnAlt.shape[0],1])+N_freq
         plt.plot(fnAlt[b:],Hdiff[b:,a],label='Hdiff')
@@ -248,13 +245,26 @@ class mtf:
         plt.plot(fnAlt[b:],Hsys[b:,a],label='Hsys')
         plt.plot(N_freq,Nf,label='Nyquist frequency')
 
+        plt.grid()
+
+        plt.ylim([0.2,1.1])
+        plt.xlim([0,0.5])
+
         plt.legend()
+        plt.ylabel('MTF')
+        plt.xlabel('Spatial Frequency')
+        plt.title('System MTF ALT('+band+')')
         plt.savefig(directory+'MTF_ALT_'+band+'.png')
         plt.close()
 
+        with open(self.outdir+'Instrument module.txt', 'a') as f:
+            f.write('Hsys_alt(Nyquist): ' + str(Hsys[nlines-1,a])+'\n')
+
         #Across track plot
         plt.figure(figsize=(8, 6))
-
+        N_freq=fnAct[ncolumns-1]
+        Nf=np.arange(0,1,1/fnAct.shape[0])
+        N_freq=np.zeros([fnAct.shape[0],1])+N_freq
         plt.plot(fnAct[a:],Hdiff[b,a:],label='Hdiff')
         plt.plot(fnAct[a:],Hdefoc[b,a:],label='Hdefoc')
         plt.plot(fnAct[a:],Hwfe[b,a:],label='Hwfe')
@@ -262,14 +272,19 @@ class mtf:
         plt.plot(fnAct[a:],Hsmear[b,a:],label='Hsmear')
         plt.plot(fnAct[a:],Hmotion[b,a:],label='Hmotion')
         plt.plot(fnAct[a:],Hsys[b,a:],label='Hsys')
+        plt.plot(N_freq,Nf,label='Nyquist frequency')
         plt.grid()
 
-        plt.ylim([0,1.1])
+        plt.ylim([0.2,1.1])
         plt.xlim([0,0.5])
 
         plt.legend()
+        plt.ylabel('MTF')
+        plt.xlabel('Spatial Frequency')
+        plt.title('System MTF ACT('+band+')')
         plt.savefig(directory+'MTF_ACT_'+band+'.png')
         plt.close()
 
-
+        with open(self.outdir+'Instrument module.txt', 'a') as f:
+            f.write('Hsys_act(Nyquist): ' + str(Hsys[b,ncolumns-1])+'\n')
 
