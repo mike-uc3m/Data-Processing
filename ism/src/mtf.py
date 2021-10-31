@@ -55,14 +55,14 @@ class mtf:
         self.logger.debug("Calculation of the diffraction MTF")
         Hdiff = self.mtfDiffract(fr2D)
 
-        # c_hdiff=0
-        # for i in range (0,len(Hdiff)):
-        #     for j in range (0,len(Hdiff)):
-        #         if fr2D[i,j]**2>1 and H[i,j]!=0:
-        #             c_hdiff=c_hdiff+1
-        #
-        # if c_hdiff!=0:
-        #     print('H_diff check failed')
+        c_hdiff=0
+        for i in range (0,len(Hdiff)):
+            for j in range (0,len(Hdiff)):
+                if fr2D[i,j]**2>1 and H[i,j]!=0:
+                    c_hdiff=c_hdiff+1
+
+        if c_hdiff!=0:
+            print('H_diff check failed')
 
         # Defocus
         Hdefoc = self.mtfDefocus(fr2D, defocus, focal, D)
